@@ -2,8 +2,9 @@ import TicketCard from "@/components/TicketCard";
 import React from "react";
 
 const getTickets = async () => {
+  const url = process.env.NEXT_PUBLIC_API_BASE_URL;
   try {
-    const res = await fetch("http://localhost:3000/api/Tickets", {
+    const res = await fetch(`${url}api/Tickets`, {
       cache: "no-store",
     });
     return res.json();
