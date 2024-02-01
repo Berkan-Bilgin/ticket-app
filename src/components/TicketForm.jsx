@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
 const TicketForm = ({ ticket }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const EDITMODE = ticket._id === "new" ? false : true;
   const router = useRouter();
   const handleChange = (e) => {
@@ -19,31 +21,44 @@ const TicketForm = ({ ticket }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (EDITMODE) {
-      console.log("edited");
-      const res = await fetch(`/api/Tickets/${ticket._id}`, {
-        method: "PUT",
-        body: JSON.stringify({ formData }),
-        "content-type": "application/json",
-      });
+    setIsSubmitting(true);
 
-      if (!res.ok) {
-        throw new Error("Failed to Update ticket");
-      }
-    } else {
-      console.log("submitted");
-      const res = await fetch("/api/Tickets", {
-        method: "POST",
-        body: JSON.stringify({ formData }),
-        "content-type": "application/json",
-      });
+    try {
+      if (EDITMODE) {
+        console.log("edited");
+        const res = await fetch(`/api/Tickets/${ticket._id}`, {
+          method: "PUT",
+          body: JSON.stringify({ formData }),
+          headers: { "Content-Type": "application/json" }, // Burada 'content-type' değil, 'Content-Type' kullanılmalı
+        });
 
-      if (!res.ok) {
-        throw new Error("Failed to create ticket");
+        if (!res.ok) {
+          throw new Error("Failed to Update ticket");
+        }
+      } else {
+        console.log("submitted");
+        const res = await fetch("/api/Tickets", {
+          method: "POST",
+          body: JSON.stringify({ formData }),
+          headers: { "Content-Type": "application/json" }, // Burada da aynı şekilde
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to create ticket");
+        }
       }
+
+      // İşlem başarılı olduğunda sayfaya yönlendir
+      router.push("/");
+      router.refresh();
+    } catch (error) {
+      console.error("Submission error:", error);
+      // Hata yönetimi yapabilirsiniz
+    } finally {
+      setTimeout(() => {
+        setIsSubmitting(false);
+      }, 500); // 500 milisaniye gecikme
     }
-    router.push("/");
-    router.refresh();
   };
 
   const startingTicketData = {
@@ -73,6 +88,7 @@ const TicketForm = ({ ticket }) => {
         onSubmit={handleSubmit}
       >
         <h3>{EDITMODE ? "Update your Ticket" : "Create Your Ticket"}</h3>
+        <h1>{isSubmitting.toString()}</h1>
         <label htmlFor="">Title</label>
         <input
           type="text"
@@ -185,6 +201,7 @@ const TicketForm = ({ ticket }) => {
           <option value="done">Done</option>
         </select>
         <input
+          disabled={isSubmitting}
           type="submit"
           className="btn  "
           value={EDITMODE ? "Update Ticket" : "Create Ticket"}
